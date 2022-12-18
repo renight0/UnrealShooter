@@ -10,6 +10,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 
 
+
 // Sets default values
 
 AShooterCharacter::AShooterCharacter()
@@ -129,6 +130,7 @@ void AShooterCharacter::FireWeapon()
 		UE_LOG(LogTemp, Warning, TEXT("Fire Weapon."));
 		UGameplayStatics::PlaySound2D(this, _fireSound);
 	}
+	
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 	if (BarrelSocket)
 	{
@@ -138,5 +140,12 @@ void AShooterCharacter::FireWeapon()
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _muzzleFlash, socketTransform);
 		}
+	}
+	
+	UAnimInstance* animInstance = GetMesh()->GetAnimInstance();
+	if(animInstance && _hipFireMontage)
+	{
+		animInstance->Montage_Play(_hipFireMontage); // Play hipFire
+		animInstance->Montage_JumpToSection(FName("StartFire")); // Jump to the StartFire beginning of the montage section
 	}
 }

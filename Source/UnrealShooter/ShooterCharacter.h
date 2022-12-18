@@ -71,6 +71,10 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
 	/* Flash spawned at BarrelSocket. */
 	class UParticleSystem* _muzzleFlash;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
+	/* Montage for firing the weapon. */
+	class UAnimMontage* _hipFireMontage;
 	
 public:
 	/* Returns Camera Boom sub object.*/
