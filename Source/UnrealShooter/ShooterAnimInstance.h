@@ -22,6 +22,7 @@ public:
 	//This function is like "Begin Play" for the UShooterAnimInstance class.
 	virtual void NativeInitializeAnimation() override;
 
+
 private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess));

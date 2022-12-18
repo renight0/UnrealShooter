@@ -8,10 +8,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "DrawDebugHelpers.h"
 
 
-
-// Sets default values
 
 AShooterCharacter::AShooterCharacter()
 {
@@ -114,7 +113,7 @@ void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 void AShooterCharacter::TurnAtRate(float turnRateMultiplier)
 {
-	// calculate delta for this frame from the rate information
+	// Calculate delta for this frame from the rate information
 	AddControllerYawInput(turnRateMultiplier * _baseTurnRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame
 }
 
@@ -127,20 +126,53 @@ void AShooterCharacter::FireWeapon()
 {
 	if(_fireSound)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Fire Weapon."));
+		//UE_LOG(LogTemp, Warning, TEXT("Fire Weapon Sound."));
 		UGameplayStatics::PlaySound2D(this, _fireSound);
 	}
-	
+
+	// Play muzzle flash FX.
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 	if (BarrelSocket)
 	{
-		const FTransform socketTransform = BarrelSocket->GetSocketTransform(GetMesh());
+		FTransform socketTransform = BarrelSocket->GetSocketTransform(GetMesh());
 
-		if (_muzzleFlash)
+		// if not moving use default socket transform location.
+		if (GetCharacterMovement()->GetCurrentAcceleration().Size() == 0.f && _muzzleFlash)
 		{
+			
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _muzzleFlash, socketTransform);
+			UE_LOG(LogTemp, Warning, TEXT("Fire not Moving."));
 		}
+
+		// if moving change socket transform location. Otherwise muzzleFlash plays at wrong location.
+		else if (GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f && _muzzleFlash)
+		{
+		
+			BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket_Moving");
+			socketTransform = BarrelSocket->GetSocketTransform(GetMesh());
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _muzzleFlash, socketTransform);
+			UE_LOG(LogTemp, Warning, TEXT("Fire Moving."));
+			
+		}
+
+		// Implementing line trace for bullet hits.
+		FHitResult fireHit;
+		const FVector shotStartLocation {socketTransform.GetLocation()};
+		const FQuat shotQuartenion {socketTransform.GetRotation()};
+
+		const FVector shotRotationAxis {shotQuartenion.GetAxisX()}; // This is the same X-axis as our firing sockets.
+		const FVector shotEndLocation {shotStartLocation + shotRotationAxis*50'000.f};
+		
+		GetWorld()->LineTraceSingleByChannel(fireHit, shotStartLocation, shotEndLocation, ECC_Visibility );
+
+		if (fireHit.bBlockingHit)
+		{
+			DrawDebugLine(GetWorld(), shotStartLocation, shotEndLocation, FColor::Red, false, 2.f);
+			DrawDebugPoint(GetWorld(), fireHit.Location, 5.f, FColor::Red, false, 2.f );
+		}
+		
 	}
+
 	
 	UAnimInstance* animInstance = GetMesh()->GetAnimInstance();
 	if(animInstance && _hipFireMontage)
