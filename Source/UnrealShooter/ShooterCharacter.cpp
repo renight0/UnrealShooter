@@ -4,6 +4,10 @@
 #include "ShooterCharacter.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 
 // Sets default values
@@ -24,7 +28,16 @@ AShooterCharacter::AShooterCharacter()
 	_followCamera->SetupAttachment(_cameraBoom, USpringArmComponent::SocketName); // Attach camera to end of arm
 	_followCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	
+	// Don't rotate when the camera rotates. Let the controller only affect the camera.
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationRoll = false;
+	bUseControllerRotationYaw = false;
+
+	// Configure character movement
+	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f,0.f); // ... at this rotation rate.
+	GetCharacterMovement()->JumpZVelocity = 600.f;
+	GetCharacterMovement()->AirControl = 0.2f;
 }
 
 // Called when the game starts or when spawned
@@ -93,6 +106,9 @@ void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	
+	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AShooterCharacter::FireWeapon);
+
 }
 
 void AShooterCharacter::TurnAtRate(float turnRateMultiplier)
@@ -104,4 +120,23 @@ void AShooterCharacter::TurnAtRate(float turnRateMultiplier)
 void AShooterCharacter::LookUpRate(float lookUpRateMultiplier)
 {
 	AddControllerPitchInput(lookUpRateMultiplier * _baseLookUpRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame
+}
+
+void AShooterCharacter::FireWeapon()
+{
+	if(_fireSound)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Fire Weapon."));
+		UGameplayStatics::PlaySound2D(this, _fireSound);
+	}
+	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+	if (BarrelSocket)
+	{
+		const FTransform socketTransform = BarrelSocket->GetSocketTransform(GetMesh());
+
+		if (_muzzleFlash)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _muzzleFlash, socketTransform);
+		}
+	}
 }

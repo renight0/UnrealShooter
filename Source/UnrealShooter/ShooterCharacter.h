@@ -42,6 +42,9 @@ public:
 	 */
 	void LookUpRate(float lookUpRateMultiplier);
 
+	// Called when the fire button is pressed.
+	void FireWeapon();
+
 private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
@@ -60,6 +63,14 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
 	/*Base turn up/down rate, in degres/sec. Other scaling may affect final turn rate.*/
 	float _baseLookUpRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
+	/* Randomize gunshot cue.*/
+	class USoundCue* _fireSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
+	/* Flash spawned at BarrelSocket. */
+	class UParticleSystem* _muzzleFlash;
 	
 public:
 	/* Returns Camera Boom sub object.*/
