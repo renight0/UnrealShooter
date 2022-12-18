@@ -48,6 +48,9 @@ public:
 	// Line trace function for bullet hits and FX.
 	const void BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool drawDebugLines);
 
+	// Line trace function for bullet hits  and FX using cross-hairs.
+	const void BulletLineTraceAndFX_FromCrosshair(const FTransform bulletFireSocketTransform, bool drawDebugLines);
+
 private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));

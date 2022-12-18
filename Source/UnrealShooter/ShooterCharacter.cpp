@@ -157,7 +157,10 @@ void AShooterCharacter::FireWeapon()
 			
 		}
 
-		BulletLineTraceAndFX(socketTransform, false);
+		
+		BulletLineTraceAndFX_FromCrosshair( socketTransform, false);
+		
+		//BulletLineTraceAndFX(socketTransform, false);
 	}
 
 	
@@ -168,7 +171,6 @@ void AShooterCharacter::FireWeapon()
 		animInstance->Montage_JumpToSection(FName("StartFire")); // Jump to the StartFire beginning of the montage section
 	}
 }
-
 
 const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool drawDebugLines)
 {
@@ -210,4 +212,70 @@ const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSo
 			beam->SetVectorParameter(FName("Target"), beamEndPoint);
 		}
 	}
+}
+
+const void AShooterCharacter::BulletLineTraceAndFX_FromCrosshair( const FTransform bulletFireSocketTransform, bool drawDebugLines)
+{
+	// Create a vector 2D and assign its value to the current viewport size.
+		FVector2d viewportSize;
+		if (GEngine && GEngine->GameViewport)
+		{
+			GEngine->GameViewport->GetViewportSize(viewportSize);
+		}
+
+		// Get screen space location of cross-hairs.
+		FVector2d crossHairLocation(viewportSize.X/2.f , viewportSize.Y / 2.f);
+		crossHairLocation.Y -= 50.f;
+
+		FVector crossHairWorldPosition;
+		FVector crossHairWorldDirection;
+
+		APlayerController* GetPlayerController = UGameplayStatics::GetPlayerController(this, 0);
+
+		/*Get the values of the vectors for the cross hair world position and direction and set them to out variables.
+		 The following function also returns a boolean and it is true if it was successful.*/
+		bool bScreenToWorldDeprojectionSuccessful = UGameplayStatics::DeprojectScreenToWorld(
+			GetPlayerController,
+			crossHairLocation,
+			crossHairWorldPosition,
+			crossHairWorldDirection);
+
+		if (bScreenToWorldDeprojectionSuccessful == true)
+		{
+			FHitResult screenTraceHit;
+			const FVector shotStartLocation{crossHairWorldPosition};
+			const FVector shotEndLocation{crossHairWorldPosition + crossHairWorldDirection * 50'000.f};
+
+			// Set beam end point to the line trace end point.
+			FVector beamEndPoint {shotEndLocation};
+
+			// Trace outward from cross-hairs world location.
+			GetWorld()->LineTraceSingleByChannel(screenTraceHit, shotStartLocation, shotEndLocation, ECC_Visibility);
+
+			if (screenTraceHit.bBlockingHit) // was there a trace hit?
+			{
+				/*if(drawDebugLines == true)
+				{
+					DrawDebugLine(GetWorld(), shotStartLocation, shotEndLocation, FColor::Red, false, 2.f);
+					DrawDebugPoint(GetWorld(), fireHit.Location, 5.f, FColor::Red, false, 2.f );
+				}*/
+				
+				beamEndPoint = screenTraceHit.Location; // beam end point is now trace hit location
+
+				if(_impactParticles)
+				{
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _impactParticles, screenTraceHit.Location);
+				}
+			}
+
+			if (_beamParticles)
+			{
+				UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),_beamParticles, bulletFireSocketTransform);
+				if (beam)
+				{
+					beam->SetVectorParameter(FName("Target"), beamEndPoint);
+				}
+			}
+			
+		}
 }
