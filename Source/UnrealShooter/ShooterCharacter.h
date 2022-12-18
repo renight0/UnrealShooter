@@ -45,6 +45,9 @@ public:
 	// Called when the fire button is pressed.
 	void FireWeapon();
 
+	// Line trace function for bullet hits and FX.
+	const void BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool drawDebugLines);
+
 private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
@@ -75,6 +78,15 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
 	/* Montage for firing the weapon. */
 	class UAnimMontage* _hipFireMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
+	/* Particles spawned upon bullet impact */
+	UParticleSystem* _impactParticles;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
+	/* Smoke trail for bullets. */
+	UParticleSystem* _beamParticles;
+	
 	
 public:
 	/* Returns Camera Boom sub object.*/

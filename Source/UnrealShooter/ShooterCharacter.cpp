@@ -9,7 +9,7 @@
 #include "Sound/SoundCue.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "DrawDebugHelpers.h"
-
+#include "Particles/ParticleSystemComponent.h"
 
 
 AShooterCharacter::AShooterCharacter()
@@ -33,6 +33,7 @@ AShooterCharacter::AShooterCharacter()
 	bUseControllerRotationRoll = false;
 	bUseControllerRotationYaw = false;
 
+	
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f,0.f); // ... at this rotation rate.
@@ -155,22 +156,7 @@ void AShooterCharacter::FireWeapon()
 			
 		}
 
-		// Implementing line trace for bullet hits.
-		FHitResult fireHit;
-		const FVector shotStartLocation {socketTransform.GetLocation()};
-		const FQuat shotQuartenion {socketTransform.GetRotation()};
-
-		const FVector shotRotationAxis {shotQuartenion.GetAxisX()}; // This is the same X-axis as our firing sockets.
-		const FVector shotEndLocation {shotStartLocation + shotRotationAxis*50'000.f};
-		
-		GetWorld()->LineTraceSingleByChannel(fireHit, shotStartLocation, shotEndLocation, ECC_Visibility );
-
-		if (fireHit.bBlockingHit)
-		{
-			DrawDebugLine(GetWorld(), shotStartLocation, shotEndLocation, FColor::Red, false, 2.f);
-			DrawDebugPoint(GetWorld(), fireHit.Location, 5.f, FColor::Red, false, 2.f );
-		}
-		
+		BulletLineTraceAndFX(socketTransform, false);
 	}
 
 	
@@ -179,5 +165,48 @@ void AShooterCharacter::FireWeapon()
 	{
 		animInstance->Montage_Play(_hipFireMontage); // Play hipFire
 		animInstance->Montage_JumpToSection(FName("StartFire")); // Jump to the StartFire beginning of the montage section
+	}
+}
+
+
+const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool drawDebugLines)
+{
+	// Implementing line trace for bullet hits.
+	FHitResult fireHit;
+	const FVector shotStartLocation {bulletFireSocketTransform.GetLocation()};
+	const FQuat ShotQuaternion {bulletFireSocketTransform.GetRotation()};
+
+	const FVector shotRotationAxis {ShotQuaternion.GetAxisX()}; // This is the same X-axis as our firing sockets.
+	const FVector shotEndLocation {shotStartLocation + shotRotationAxis*50'000.f};
+
+	FVector beamEndPoint{ shotEndLocation }; // Location used for smoke trails.
+
+		
+	GetWorld()->LineTraceSingleByChannel(fireHit, shotStartLocation, shotEndLocation, ECC_Visibility );
+
+	if (fireHit.bBlockingHit)
+	{
+		if(drawDebugLines == true)
+		{
+			DrawDebugLine(GetWorld(), shotStartLocation, shotEndLocation, FColor::Red, false, 2.f);
+			DrawDebugPoint(GetWorld(), fireHit.Location, 5.f, FColor::Red, false, 2.f );
+		}
+		
+		beamEndPoint = fireHit.Location;
+			
+		if(_impactParticles)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _impactParticles, fireHit.Location);
+		}
+	}
+
+	// Beam trails between weapon fire socket and the end point of the bullet trajectory
+	if (_beamParticles)
+	{
+		UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),_beamParticles, bulletFireSocketTransform);
+		if (beam)
+		{
+			beam->SetVectorParameter(FName("Target"), beamEndPoint);
+		}
 	}
 }
