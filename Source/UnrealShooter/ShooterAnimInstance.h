@@ -41,4 +41,10 @@ private:
 	//For this specific code, this is whether or not the character is moving. Which means that even at
 	//constant velocity this variable is true.
 	bool _bIsAccelerating;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess));
+	/* Offset yaw used for strafing. */
+	float _movementOffsetYaw;
+
+	
 };

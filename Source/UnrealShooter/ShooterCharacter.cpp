@@ -172,7 +172,7 @@ void AShooterCharacter::FireWeapon()
 	}
 }
 
-const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool drawDebugLines)
+const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool bDrawDebugLines)
 {
 	// Implementing line trace for bullet hits.
 	FHitResult fireHit;
@@ -189,7 +189,7 @@ const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSo
 
 	if (fireHit.bBlockingHit)
 	{
-		if(drawDebugLines == true)
+		if(bDrawDebugLines == true)
 		{
 			DrawDebugLine(GetWorld(), shotStartLocation, shotEndLocation, FColor::Red, false, 2.f);
 			DrawDebugPoint(GetWorld(), fireHit.Location, 5.f, FColor::Red, false, 2.f );
@@ -214,7 +214,7 @@ const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSo
 	}
 }
 
-const void AShooterCharacter::BulletLineTraceAndFX_FromCrosshair( const FTransform bulletFireSocketTransform, bool drawDebugLines)
+const void AShooterCharacter::BulletLineTraceAndFX_FromCrosshair( const FTransform bulletFireSocketTransform, bool bDrawDebugLines)
 {
 	// Create a vector 2D and assign its value to the current viewport size.
 		FVector2d viewportSize;
@@ -254,28 +254,46 @@ const void AShooterCharacter::BulletLineTraceAndFX_FromCrosshair( const FTransfo
 
 			if (screenTraceHit.bBlockingHit) // was there a trace hit?
 			{
-				/*if(drawDebugLines == true)
-				{
-					DrawDebugLine(GetWorld(), shotStartLocation, shotEndLocation, FColor::Red, false, 2.f);
-					DrawDebugPoint(GetWorld(), fireHit.Location, 5.f, FColor::Red, false, 2.f );
-				}*/
+				
 				
 				beamEndPoint = screenTraceHit.Location; // beam end point is now trace hit location
 
-				if(_impactParticles)
+				if(_impactParticles != nullptr) // was impact particles assigned in the character blueprint?
 				{
 					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), _impactParticles, screenTraceHit.Location);
 				}
 			}
 
-			if (_beamParticles)
+			/* Perform a second trace, this time from the gun barrel to the end point to check if there is another
+			object in the way */
+			FHitResult	weaponTraceHit;
+
+			const FVector weaponTraceStart { bulletFireSocketTransform.GetLocation() };
+			const FVector weaponTraceEnd { beamEndPoint };
+			
+			GetWorld()->LineTraceSingleByChannel(weaponTraceHit, weaponTraceStart, weaponTraceEnd, ECC_Visibility);
+
+			if (weaponTraceHit.bBlockingHit) // Was there an object between barrel and beamEndPoint? 
+			{
+				beamEndPoint = weaponTraceHit.Location;
+			}
+			
+			if (_beamParticles != nullptr) // was beam asset assigned in the character blueprint?
 			{
 				UParticleSystemComponent* beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),_beamParticles, bulletFireSocketTransform);
-				if (beam)
+
+				if (beam != nullptr)
 				{
 					beam->SetVectorParameter(FName("Target"), beamEndPoint);
 				}
 			}
+
+			if(bDrawDebugLines == true)
+			{
+				DrawDebugLine(GetWorld(), weaponTraceStart, beamEndPoint, FColor::Red, false, 2.f);
+				DrawDebugPoint(GetWorld(), beamEndPoint, 5.f, FColor::Red, false, 2.f );
+			}
 			
 		}
 }
+

@@ -23,6 +23,14 @@ protected:
 
 	void MoveRight(float Value);
 
+	// Line trace function for bullet hits and FX.
+	const void BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, const bool bDrawDebugLines);
+
+	// Line trace function for bullet hits  and FX using cross-hairs.
+	const void BulletLineTraceAndFX_FromCrosshair(const FTransform bulletFireSocketTransform, const bool bDrawDebugLines);
+
+
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -45,11 +53,7 @@ public:
 	// Called when the fire button is pressed.
 	void FireWeapon();
 
-	// Line trace function for bullet hits and FX.
-	const void BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool drawDebugLines);
 
-	// Line trace function for bullet hits  and FX using cross-hairs.
-	const void BulletLineTraceAndFX_FromCrosshair(const FTransform bulletFireSocketTransform, bool drawDebugLines);
 
 private:
 	

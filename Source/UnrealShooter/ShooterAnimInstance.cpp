@@ -4,6 +4,7 @@
 #include "ShooterAnimInstance.h"
 #include "ShooterCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
@@ -28,6 +29,24 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 			_bIsAccelerating = true; // this is whether or not the character is moving. Which means that even at constant velocity this variable is true.
 		}
 		else { _bIsAccelerating = false; }
+
+		FRotator aimRotation = _shooterCharacter->GetBaseAimRotation();
+		FRotator movementRotation = UKismetMathLibrary::MakeRotFromX(_shooterCharacter->GetVelocity());
+
+		// Getting the angle between cross-hair direction and character movement direction 
+		_movementOffsetYaw = UKismetMathLibrary::NormalizedDeltaRotator(movementRotation, aimRotation).Yaw;
+		
+		/*FString rotationMessage = FString::Printf(TEXT("Base Aim Rotation: %f"), aimRotation.Yaw);
+		FString movementRotationMessage = FString::Printf(TEXT("Movement Rotation: %f"), movementRotation.Yaw);*/
+
+		/*FString offsetMessage = FString::Printf(TEXT("Movement Rotation: %f"), _movementOffsetYaw);*/
+
+		/*if (GEngine != nullptr)
+		{
+			GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, rotationMessage);
+			GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, movementRotationMessage);
+			GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, offsetMessage);
+		}*/
 	}
 }
 
