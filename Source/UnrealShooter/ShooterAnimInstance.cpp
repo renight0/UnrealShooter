@@ -36,30 +36,38 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		// Getting the angle between cross-hair direction and character movement direction 
 		_movementOffsetYaw = UKismetMathLibrary::NormalizedDeltaRotator(movementRotation, aimRotation).Yaw;
 
+		/* _movementOffsetYaw uses the velocity, and when the character stops running, velocity is zero. So we must store the value of
+		 * _movementOffsetYaw from the previous frame into _lastMovementeOffsetYaw and use that in the blendspace Input (inside the animation blueprint)
+		 * when they stop running*/
+		
 		if (_shooterCharacter->GetVelocity().Size() > 0.f)
 		{
 			_lastMovementOffsetYaw = _movementOffsetYaw;
 
 		}
-		
-		/*FString rotationMessage = FString::Printf(TEXT("Base Aim Rotation: %f"), aimRotation.Yaw);
-		FString movementRotationMessage = FString::Printf(TEXT("Movement Rotation: %f"), movementRotation.Yaw);*/
 
-		/*FString offsetMessage = FString::Printf(TEXT("Movement Rotation: %f"), _movementOffsetYaw);*/
-
-		/*if (GEngine != nullptr)
+		//code for seeing Offset Yaw On Screen
+		if (_bSeeOffsetYallOnScreen == true)
 		{
-			GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, rotationMessage);
-			GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, movementRotationMessage);
-			GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, offsetMessage);
-		}*/
+			FString rotationMessage = FString::Printf(TEXT("Base Aim Rotation: %f"), aimRotation.Yaw);
+			FString movementRotationMessage = FString::Printf(TEXT("Movement Rotation: %f"), movementRotation.Yaw);
+
+			FString offsetMessage = FString::Printf(TEXT("Movement Rotation: %f"), _movementOffsetYaw);
+
+			if (GEngine != nullptr)
+			{
+				GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, rotationMessage);
+				GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, movementRotationMessage);
+				GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, offsetMessage);
+			}
+		}
 	}
 }
 
 void UShooterAnimInstance::NativeInitializeAnimation()
 {
-	// Trying to get the object APawn that has this script attached (in blueprint mostly) and cast its AShooterCharacter class.
-	// Remember ACharacter Deriver from APawn.
+	// Trying to get the object APawn that has this script attached (in blueprint mostly) and cast its AShooterCharacter class. Remember ACharacter derives from APawn.*/
 	_shooterCharacter = Cast<AShooterCharacter>(TryGetPawnOwner());
 	//Super::NativeInitializeAnimation();
+	_bSeeOffsetYallOnScreen = false;
 }
