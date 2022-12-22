@@ -32,9 +32,15 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 
 		FRotator aimRotation = _shooterCharacter->GetBaseAimRotation();
 		FRotator movementRotation = UKismetMathLibrary::MakeRotFromX(_shooterCharacter->GetVelocity());
-
+		
 		// Getting the angle between cross-hair direction and character movement direction 
 		_movementOffsetYaw = UKismetMathLibrary::NormalizedDeltaRotator(movementRotation, aimRotation).Yaw;
+
+		if (_shooterCharacter->GetVelocity().Size() > 0.f)
+		{
+			_lastMovementOffsetYaw = _movementOffsetYaw;
+
+		}
 		
 		/*FString rotationMessage = FString::Printf(TEXT("Base Aim Rotation: %f"), aimRotation.Yaw);
 		FString movementRotationMessage = FString::Printf(TEXT("Movement Rotation: %f"), movementRotation.Yaw);*/
