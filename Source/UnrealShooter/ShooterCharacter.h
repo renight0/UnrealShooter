@@ -50,6 +50,12 @@ public:
 	 */
 	void LookUpRate(float lookUpRateMultiplier);
 
+	// Rotate controller based on mouse X movement. @param Value is the input value from the mouse X movement.
+	void Turn (float value);
+
+	// Rotate controller based on mouse Y movement. @param Value is the input value from the mouse Y movement.
+	void LookUp (float value);
+
 	// Called when the fire button is pressed.
 	void FireWeapon();
 
@@ -61,6 +67,9 @@ public:
 	// Handle interpolation for zoom when aiming.
 	void CameraInterpolatingZoomFOV(float DeltaTime);
 
+	// Set _baseTurnRates and _baseLookUpRate based on aiming. This function changes the look sensitivity based on aiming.
+	void SetLookRates();
+	
 private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
@@ -71,14 +80,46 @@ private:
 	/*Camera that follows a character. */
 	class UCameraComponent* _followCamera;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
 	/*Base turn rate in degres/sec. Other scaling may affect final turn rate. */
 	float _baseTurnRate;
-
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
 	/*Base turn up/down rate, in degres/sec. Other scaling may affect final turn rate.*/
 	float _baseLookUpRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
+	// Turn rate while not aiming.
+	float _hipTurnRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
+	// Look up rate when not aiming.
+	float _hipLookUpRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
+	// Turn rate when aiming.
+	float _aimingTurnRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
+	// Look up rate when aiming.
+	float _aimingLookUpRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"));
+	// Scale multiplier for mouse sensitivity. Turn rate when not aiming.
+	float _mouseHipTurnRate;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"));
+	// Scale multiplier for mouse sensitivity. Look up rate when not aiming.
+	float _mouseHipLookUpRate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"));
+	// Scale multiplier for mouse sensitivity. Turn rate when aiming.
+	float _mouseAimingTurnRate;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"));
+	// Scale multiplier for mouse sensitivity. Look up rate when aiming.
+	float _mouseAimingLookUpRate;
+	
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
 	/* Randomize gunshot cue.*/
@@ -123,5 +164,8 @@ public:
 	
 	/** Returns FollowCamera sub object. **/
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return _followCamera; }
+
+	// Returns _bIsAiming bool value.
+	FORCEINLINE bool GetAiming() const { return _bIsAiming; }
 	
 };

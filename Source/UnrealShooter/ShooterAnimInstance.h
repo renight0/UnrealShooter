@@ -53,5 +53,8 @@ private:
 	// See Offset Yaw On Screen?
 	bool _bSeeOffsetYallOnScreen;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"));
+	// Is characterAiming?
+	bool _bAiming;
 	
 };

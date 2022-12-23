@@ -17,13 +17,31 @@ AShooterCharacter::AShooterCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Base rates for turning/looking up.
 	_baseTurnRate = 45.f;
 	_baseLookUpRate = 45.f;
-	_bIsAiming =false;
+
+	// Turn rates for aiming/not aiming.
+	_hipTurnRate = 90.f;
+	_hipLookUpRate = 90.f;
+	_aimingTurnRate = 20.f;
+	_aimingLookUpRate = 20.f;
+
+	// Mouse look sensitivity multiplier factors
+	_mouseHipTurnRate = 1.0f;
+	_mouseHipLookUpRate = 1.0f;
+	_mouseAimingTurnRate = 0.2f;
+	_mouseAimingLookUpRate = 0.2f;
+	
+	_bIsAiming = false;
+	
+	// Camera field of view values.
 	_cameraDefaultFOV = 0.f; // cameraDefaultFOV is set in BeginPlay.
 	_cameraZoomedFOV = 35.f;
 	_cameraCurrentFOV = 0.f;
 	_zoomInterpolationSpeed = 30.f;
+
+	
 	
 	//Create a camera boom (pulls in towards the character if there is a collision)
 	_cameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -63,6 +81,17 @@ void AShooterCharacter::BeginPlay()
 	
 }
 
+// Called every frame
+void AShooterCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	
+	CameraInterpolatingZoomFOV(DeltaTime);
+
+	SetLookRates();
+	
+}
+
 void AShooterCharacter::MoveForward(float Value)
 {
 	if (Controller != nullptr && (Value != 0.0f))
@@ -95,15 +124,6 @@ void AShooterCharacter::MoveRight(float Value)
 	}
 }
 
-// Called every frame
-void AShooterCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	
-	CameraInterpolatingZoomFOV(DeltaTime);
-	
-}
-
 // Called to bind functionality to input
 void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -114,8 +134,8 @@ void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAxis("MoveRight", this, &AShooterCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("TurnRate", this, &AShooterCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AShooterCharacter::LookUpRate);
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("Turn", this, &AShooterCharacter::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &AShooterCharacter::LookUp);
 
 	//Action mappings
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
@@ -138,6 +158,36 @@ void AShooterCharacter::TurnAtRate(float turnRateMultiplier)
 void AShooterCharacter::LookUpRate(float lookUpRateMultiplier)
 {
 	AddControllerPitchInput(lookUpRateMultiplier * _baseLookUpRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame
+}
+
+void AShooterCharacter::Turn(float value)
+{
+	float turnScaleFactor{};
+	
+	if (_bIsAiming)
+	{
+		turnScaleFactor = _mouseAimingTurnRate;
+	}
+	else
+	{
+		turnScaleFactor = _mouseAimingTurnRate;
+	}
+	AddControllerYawInput(value* turnScaleFactor);
+}
+
+void AShooterCharacter::LookUp(float value)
+{
+	float lookUpScaleFactor{};
+	
+	if (_bIsAiming)
+	{
+		lookUpScaleFactor = _mouseAimingTurnRate;
+	}
+	else
+	{
+		lookUpScaleFactor = _mouseAimingTurnRate;
+	}
+	AddControllerPitchInput(value* lookUpScaleFactor);
 }
 
 void AShooterCharacter::FireWeapon()
@@ -186,32 +236,6 @@ void AShooterCharacter::FireWeapon()
 		animInstance->Montage_Play(_hipFireMontage); // Play hipFire
 		animInstance->Montage_JumpToSection(FName("StartFire")); // Jump to the StartFire beginning of the montage section
 	}
-}
-
-void AShooterCharacter::AimingButtonPressed()
-{
-	_bIsAiming = true;
-}
-
-void AShooterCharacter::AimingButtonReleased()
-{
-	_bIsAiming = false;
-}
-
-void AShooterCharacter::CameraInterpolatingZoomFOV(float DeltaTime)
-{
-	// Set current camera field of view.
-	if (_bIsAiming)
-	{
-		// Interpolated to zoomed FOV.
-		_cameraCurrentFOV = FMath::FInterpTo(_cameraCurrentFOV, _cameraZoomedFOV,DeltaTime,_zoomInterpolationSpeed);
-	}
-	else if (!_bIsAiming)
-	{
-		// Interpolate to default field of view.
-		_cameraCurrentFOV = FMath::FInterpTo(_cameraCurrentFOV, _cameraDefaultFOV,DeltaTime,_zoomInterpolationSpeed);
-	}
-	GetFollowCamera()->SetFieldOfView(_cameraCurrentFOV);
 }
 
 const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool bDrawDebugLines)
@@ -338,4 +362,46 @@ const void AShooterCharacter::BulletLineTraceAndFX_FromCrosshair( const FTransfo
 			
 		}
 }
+
+
+void AShooterCharacter::AimingButtonPressed()
+{
+	_bIsAiming = true;
+}
+
+void AShooterCharacter::AimingButtonReleased()
+{
+	_bIsAiming = false;
+}
+
+void AShooterCharacter::CameraInterpolatingZoomFOV(float DeltaTime)
+{
+	// Set current camera field of view.
+	if (_bIsAiming)
+	{
+		// Interpolated to zoomed FOV.
+		_cameraCurrentFOV = FMath::FInterpTo(_cameraCurrentFOV, _cameraZoomedFOV,DeltaTime,_zoomInterpolationSpeed);
+	}
+	else if (!_bIsAiming)
+	{
+		// Interpolate to default field of view.
+		_cameraCurrentFOV = FMath::FInterpTo(_cameraCurrentFOV, _cameraDefaultFOV,DeltaTime,_zoomInterpolationSpeed);
+	}
+	GetFollowCamera()->SetFieldOfView(_cameraCurrentFOV);
+}
+
+void AShooterCharacter::SetLookRates()
+{
+	if (_bIsAiming)
+	{
+		_baseTurnRate = _aimingTurnRate;
+		_baseLookUpRate = _aimingTurnRate;
+	}
+	else if (_bIsAiming == false)
+	{
+		_baseTurnRate = _hipTurnRate;
+		_baseLookUpRate = _hipLookUpRate;
+	}
+}
+
 

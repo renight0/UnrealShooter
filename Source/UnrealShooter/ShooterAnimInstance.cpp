@@ -28,7 +28,10 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		{
 			_bIsAccelerating = true; // this is whether or not the character is moving. Which means that even at constant velocity this variable is true.
 		}
+		
 		else { _bIsAccelerating = false; }
+
+		_bAiming = _shooterCharacter->GetAiming();
 
 		FRotator aimRotation = _shooterCharacter->GetBaseAimRotation();
 		FRotator movementRotation = UKismetMathLibrary::MakeRotFromX(_shooterCharacter->GetVelocity());
