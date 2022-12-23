@@ -50,7 +50,8 @@ private:
 	/* Offset yaw the frame before the character stops the movement. Used for strafing. */
 	float _lastMovementOffsetYaw;
 
+	// See Offset Yaw On Screen?
 	bool _bSeeOffsetYallOnScreen;
 
-
+	
 };

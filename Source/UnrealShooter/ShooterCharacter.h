@@ -53,7 +53,13 @@ public:
 	// Called when the fire button is pressed.
 	void FireWeapon();
 
+	/* Set _bIsAiming to true when button press*/
+	void AimingButtonPressed();
+	/* Set _bIsAiming to false when button release*/
+	void AimingButtonReleased();
 
+	// Handle interpolation for zoom when aiming.
+	void CameraInterpolatingZoomFOV(float DeltaTime);
 
 private:
 	
@@ -93,7 +99,23 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
 	/* Smoke trail for bullets. */
 	UParticleSystem* _beamParticles;
-	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"));
+	// True when aiming.
+	bool _bIsAiming;
+
+	// Default camera view value.
+	float _cameraDefaultFOV;
+
+	// Field of view value for when zoomed in.
+	float _cameraZoomedFOV;
+
+	// Current field of view in the current frame.
+	float _cameraCurrentFOV;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
+	// Interpolation speed for zooming when aiming.
+	float _zoomInterpolationSpeed;
 	
 public:
 	/* Returns Camera Boom sub object.*/
