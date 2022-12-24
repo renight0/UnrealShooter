@@ -30,7 +30,6 @@ protected:
 	const void BulletLineTraceAndFX_FromCrosshair(const FTransform bulletFireSocketTransform, const bool bDrawDebugLines);
 
 
-
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -69,6 +68,16 @@ public:
 
 	// Set _baseTurnRates and _baseLookUpRate based on aiming. This function changes the look sensitivity based on aiming.
 	void SetLookRates();
+
+	// Calculate crosshair spread multiplier.
+	void CalculateCrosshairSpread(float Deltatime);
+
+	// Start bullet fire timer for crosshairs.
+	void StartCrosshairBulletFire();
+	
+	UFUNCTION()
+	void FinishCrosshairBulletFire();
+	
 	
 private:
 	
@@ -157,7 +166,33 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"));
 	// Interpolation speed for zooming when aiming.
 	float _zoomInterpolationSpeed;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshaira, meta = (AllowPrivateAccess = "true"));
+	// Determines the spread of the cross hairs.
+	float _crossHairSpreadMultiplier;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshaira, meta = (AllowPrivateAccess = "true"));
+	// Velocity component for cross hairs spread.
+	float _crossHairVelocityMultiplier;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshaira, meta = (AllowPrivateAccess = "true"));
+	// In air component for cross hairs spread.
+	float _crossHairInAirMultiplier;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshaira, meta = (AllowPrivateAccess = "true"));
+	// Aim component for cross hairs spread.
+	float _crossHairAimMultiplier;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshaira, meta = (AllowPrivateAccess = "true"));
+	// Shooting component for cross hairs spread.
+	float _crossHairShootingMultiplier;
+
+	float _shootTimeDuration;
+
+	bool _bFiringBullet;
+
+	FTimerHandle _crosshairShootTimer;
+
 public:
 	/* Returns Camera Boom sub object.*/
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return _cameraBoom; }
@@ -167,5 +202,12 @@ public:
 
 	// Returns _bIsAiming bool value.
 	FORCEINLINE bool GetAiming() const { return _bIsAiming; }
+
+	
+	UFUNCTION(BlueprintCallable)
+	// Getter function for _crossHairSpreadMultiplier .
+	float GetCrosshairSpreadMultiplier() const;
+
+	
 	
 };

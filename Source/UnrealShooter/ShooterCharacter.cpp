@@ -41,6 +41,18 @@ AShooterCharacter::AShooterCharacter()
 	_cameraCurrentFOV = 0.f;
 	_zoomInterpolationSpeed = 30.f;
 
+	// Crosshair spread factors
+	_crossHairSpreadMultiplier = 0.f;
+	_crossHairVelocityMultiplier = 0.f;
+	_crossHairInAirMultiplier = 0.f;
+	_crossHairAimMultiplier = 0.f;
+	_crossHairShootingMultiplier = 0.f;
+
+	// Bullet fire timer variables
+	_shootTimeDuration = 0.05f;
+	_bFiringBullet = false;
+
+	_crosshairShootTimer;
 	
 	
 	//Create a camera boom (pulls in towards the character if there is a collision)
@@ -89,6 +101,8 @@ void AShooterCharacter::Tick(float DeltaTime)
 	CameraInterpolatingZoomFOV(DeltaTime);
 
 	SetLookRates();
+
+	CalculateCrosshairSpread(DeltaTime);
 	
 }
 
@@ -223,12 +237,13 @@ void AShooterCharacter::FireWeapon()
 			
 		}
 
+		//BulletLineTraceAndFX(socketTransform, false);
 		
 		BulletLineTraceAndFX_FromCrosshair( socketTransform, false);
 		
-		//BulletLineTraceAndFX(socketTransform, false);
 	}
 
+	StartCrosshairBulletFire();
 	
 	UAnimInstance* animInstance = GetMesh()->GetAnimInstance();
 	if(animInstance && _hipFireMontage)
@@ -236,6 +251,18 @@ void AShooterCharacter::FireWeapon()
 		animInstance->Montage_Play(_hipFireMontage); // Play hipFire
 		animInstance->Montage_JumpToSection(FName("StartFire")); // Jump to the StartFire beginning of the montage section
 	}
+}
+
+void AShooterCharacter::StartCrosshairBulletFire()
+{
+	_bFiringBullet = true;
+
+	GetWorldTimerManager().SetTimer(_crosshairShootTimer, this, &AShooterCharacter::FinishCrosshairBulletFire, _shootTimeDuration);
+}
+ 
+void AShooterCharacter::FinishCrosshairBulletFire()
+{
+	_bFiringBullet = false;
 }
 
 const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool bDrawDebugLines)
@@ -291,7 +318,7 @@ const void AShooterCharacter::BulletLineTraceAndFX_FromCrosshair( const FTransfo
 
 		// Get screen space location of cross-hairs.
 		FVector2d crossHairLocation(viewportSize.X/2.f , viewportSize.Y / 2.f);
-		crossHairLocation.Y -= 50.f;
+		//crossHairLocation.Y -= 50.f; // Only uncomment this if also subtracting from screen center position in hudBP to get the new crosshair location.
 
 		FVector crossHairWorldPosition;
 		FVector crossHairWorldDirection;
@@ -404,4 +431,60 @@ void AShooterCharacter::SetLookRates()
 	}
 }
 
+void AShooterCharacter::CalculateCrosshairSpread(float Deltatime)
+{
+	FVector2d walkSpeedRange{0.f , 600.f};
+
+	FVector2d velocityMultiplierRange{0.f , 1.f};
+
+	FVector velocity { GetVelocity() };
+	velocity.Z = 0.f;
+	
+
+	
+	_crossHairVelocityMultiplier = FMath::GetMappedRangeValueClamped(walkSpeedRange, velocityMultiplierRange, velocity.Size());
+
+	// Is character in air?
+	if (GetCharacterMovement()->IsFalling())
+	{
+		// Spread the crosshairs slowly while in air.
+		_crossHairInAirMultiplier = FMath::FInterpTo(_crossHairInAirMultiplier, 2.25f, Deltatime, 2.25f);
+	}
+	else if (GetCharacterMovement()->IsFalling() == false)
+	{
+		//Shrink the crosshairs rapidly while on the ground
+		_crossHairInAirMultiplier = FMath::FInterpTo(_crossHairInAirMultiplier, 0.f, Deltatime, 30.f);
+		
+	}
+
+	// Is the character aiming?
+	if (_bIsAiming == true)
+	{
+		_crossHairAimMultiplier = FMath::FInterpTo(_crossHairAimMultiplier, 0.6f, Deltatime, 30.f);
+	}
+	else
+	{
+		_crossHairAimMultiplier = FMath::FInterpTo(_crossHairAimMultiplier, 0.f, Deltatime, 30.f);
+	}
+
+	// Is the character shooting?
+	if (_bFiringBullet)
+	{
+		_crossHairShootingMultiplier = FMath::FInterpTo(_crossHairShootingMultiplier, 0.3f, Deltatime, 60.f);
+	}
+	else
+	{
+		_crossHairShootingMultiplier = FMath::FInterpTo(_crossHairShootingMultiplier, 0.f, Deltatime, 60.f);
+	}
+
+
+	
+	_crossHairSpreadMultiplier = 0.5f + _crossHairVelocityMultiplier +_crossHairInAirMultiplier -  _crossHairAimMultiplier + _crossHairShootingMultiplier;
+	
+}
+
+float AShooterCharacter::GetCrosshairSpreadMultiplier() const
+{
+	return  _crossHairSpreadMultiplier;
+}
 
