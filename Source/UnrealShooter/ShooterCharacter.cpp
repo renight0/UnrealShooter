@@ -48,6 +48,11 @@ AShooterCharacter::AShooterCharacter()
 	_crossHairAimMultiplier = 0.f;
 	_crossHairShootingMultiplier = 0.f;
 
+	// Automatic gun firing variables
+	_automaticFireRate = 0.1f;
+	_bShouldFire = true;
+	_bFireButtonPressed = false;
+
 	// Bullet fire timer variables
 	_shootTimeDuration = 0.05f;
 	_bFiringBullet = false;
@@ -80,7 +85,7 @@ AShooterCharacter::AShooterCharacter()
 	GetCharacterMovement()->AirControl = 0.2f;
 }
 
-// Called when the game starts or when spawned
+
 void AShooterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -93,7 +98,7 @@ void AShooterCharacter::BeginPlay()
 	
 }
 
-// Called every frame
+
 void AShooterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -104,6 +109,32 @@ void AShooterCharacter::Tick(float DeltaTime)
 
 	CalculateCrosshairSpread(DeltaTime);
 	
+}
+
+void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	check(PlayerInputComponent);
+
+	PlayerInputComponent->BindAxis("MoveForward", this, &AShooterCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &AShooterCharacter::MoveRight);
+	PlayerInputComponent->BindAxis("TurnRate", this, &AShooterCharacter::TurnAtRate);
+	PlayerInputComponent->BindAxis("LookUpRate", this, &AShooterCharacter::LookUpRate);
+	PlayerInputComponent->BindAxis("Turn", this, &AShooterCharacter::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &AShooterCharacter::LookUp);
+
+	//Action mappings
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+
+	
+	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AShooterCharacter::FireButtonPressed);
+	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AShooterCharacter::FireButtonReleased);
+
+	
+	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &AShooterCharacter::AimingButtonPressed);
+	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &AShooterCharacter::AimingButtonReleased);
+
 }
 
 void AShooterCharacter::MoveForward(float Value)
@@ -136,31 +167,6 @@ void AShooterCharacter::MoveRight(float Value)
 		/*double rot = YawRotator.Yaw;
 		UE_LOG(LogTemp, Display,TEXT("Input tensor: %f"), rot);*/
 	}
-}
-
-// Called to bind functionality to input
-void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	check(PlayerInputComponent);
-
-	PlayerInputComponent->BindAxis("MoveForward", this, &AShooterCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &AShooterCharacter::MoveRight);
-	PlayerInputComponent->BindAxis("TurnRate", this, &AShooterCharacter::TurnAtRate);
-	PlayerInputComponent->BindAxis("LookUpRate", this, &AShooterCharacter::LookUpRate);
-	PlayerInputComponent->BindAxis("Turn", this, &AShooterCharacter::Turn);
-	PlayerInputComponent->BindAxis("LookUp", this, &AShooterCharacter::LookUp);
-
-	//Action mappings
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-
-	
-	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AShooterCharacter::FireWeapon);
-
-	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &AShooterCharacter::AimingButtonPressed);
-	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &AShooterCharacter::AimingButtonReleased);
-
 }
 
 void AShooterCharacter::TurnAtRate(float turnRateMultiplier)
@@ -263,6 +269,38 @@ void AShooterCharacter::StartCrosshairBulletFire()
 void AShooterCharacter::FinishCrosshairBulletFire()
 {
 	_bFiringBullet = false;
+}
+
+void AShooterCharacter::FireButtonPressed()
+{
+	_bFireButtonPressed = true;
+	StartFireTimer();
+}
+
+void AShooterCharacter::FireButtonReleased()
+{
+	_bFireButtonPressed = false;
+}
+
+void AShooterCharacter::StartFireTimer()
+{
+	if (_bShouldFire)
+	{
+		FireWeapon();
+		_bShouldFire = false;
+		GetWorldTimerManager().SetTimer(_autoFireTimer, this, &AShooterCharacter::AutoFireReset, _automaticFireRate);
+	}
+}
+
+void AShooterCharacter::AutoFireReset()
+{
+	_bShouldFire = true;
+
+	// If fire button is still pressed, loop the StartFireTimer function (for automatic firing).
+	if (_bFireButtonPressed)
+	{
+		StartFireTimer();
+	}
 }
 
 const void AShooterCharacter::BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, bool bDrawDebugLines)

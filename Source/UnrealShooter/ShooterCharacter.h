@@ -23,17 +23,6 @@ protected:
 
 	void MoveRight(float Value);
 
-	// Line trace function for bullet hits and FX.
-	const void BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, const bool bDrawDebugLines);
-
-	// Line trace function for bullet hits  and FX using cross-hairs.
-	const void BulletLineTraceAndFX_FromCrosshair(const FTransform bulletFireSocketTransform, const bool bDrawDebugLines);
-
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -58,8 +47,15 @@ public:
 	// Called when the fire button is pressed.
 	void FireWeapon();
 
+	// Line trace function for bullet hits and FX.
+	const void BulletLineTraceAndFX(const FTransform bulletFireSocketTransform, const bool bDrawDebugLines);
+
+	// Line trace function for bullet hits  and FX using cross-hairs.
+	const void BulletLineTraceAndFX_FromCrosshair(const FTransform bulletFireSocketTransform, const bool bDrawDebugLines);
+
 	/* Set _bIsAiming to true when button press*/
 	void AimingButtonPressed();
+	
 	/* Set _bIsAiming to false when button release*/
 	void AimingButtonReleased();
 
@@ -78,7 +74,19 @@ public:
 	UFUNCTION()
 	void FinishCrosshairBulletFire();
 	
-	
+	void FireButtonPressed();
+
+	void FireButtonReleased();
+
+	void StartFireTimer();
+
+	UFUNCTION()
+	void AutoFireReset();
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+
 private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
@@ -187,12 +195,27 @@ private:
 	// Shooting component for cross hairs spread.
 	float _crossHairShootingMultiplier;
 
+	// Shoot time duration used for crosshair hud operations when shooting or not shooting.
 	float _shootTimeDuration;
 
+	// Is player firing? Bool used for crosshair hud operations when shooting or not shooting.
 	bool _bFiringBullet;
 
+	// Timer handle used for crosshair hud operations when shooting or not shooting.
 	FTimerHandle _crosshairShootTimer;
 
+	// Left mouse button or right console trigger pressed.
+	bool _bFireButtonPressed;
+
+	// True when we can fire. False when waiting for for timer until weapon can fire again.
+	bool _bShouldFire;
+
+	// Fire rate of automatic gun fire.
+	float _automaticFireRate;
+
+	// Sets a timer between gunshots.
+	FTimerHandle _autoFireTimer;
+	
 public:
 	/* Returns Camera Boom sub object.*/
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return _cameraBoom; }
